@@ -158,6 +158,9 @@ class Wp_Pbj {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action('carbon_fields_register_fields', $plugin_admin, 'crb_attach_sipd_options');
 
+		// ajax request
+		$this->loader->add_action('wp_ajax_pbj_singkron_user_ppk',  $plugin_admin, 'pbj_singkron_user_ppk');
+
 	}
 
 	/**

@@ -42,6 +42,8 @@ class Wp_Pbj_Admin {
 	 * @access   private
 	 * @var      string    $version    The current version of this plugin.
 	 */
+	private $lpse;
+
 	private $version;
 
 	/**
@@ -55,6 +57,7 @@ class Wp_Pbj_Admin {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
+		$this->lpse = $this->connLPSE(array('cek' => true));
 
 	}
 
@@ -101,6 +104,9 @@ class Wp_Pbj_Admin {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wp-pbj-admin.js', array( 'jquery' ), $this->version, false );
+		wp_localize_script( $this->plugin_name, 'pbj', array(
+		    'api_key' => get_option( '_crb_pbj_api_key' )
+		));
 
 	}
 
@@ -119,8 +125,7 @@ class Wp_Pbj_Admin {
         	return;
         }
         $ket_lpse = '<span style="color: red; font-weight: bold;">Belum terkoneksi</span>';
-        $cek_koneksi = $this->connLPSE(array('cek' => true));
-        if(!empty($cek_koneksi)){
+        if(!empty($this->lpse)){
         	$ket_lpse = '<span style="color: green; font-weight: bold;">Sukses terkoneksi</span>';
         }
 		$basic_options_container = Container::make( 'theme_options', __( 'PBJ Options' ) )
@@ -140,6 +145,13 @@ class Wp_Pbj_Admin {
 	            Field::make( 'html', 'crb_pbj_status_lpse' )
 	            	->set_html( 'Status koneksi database LPSE: '.$ket_lpse )
             ) );
+        Container::make( 'theme_options', __( 'Singkronisasi LPSE' ) )
+		    ->set_page_parent( $basic_options_container )
+		    ->add_fields( array(
+		    	Field::make( 'html', 'crb_pbj_singkron_user_ppk' )
+            		->set_html( '<a id="pbj_singkron_user_ppk" onclick="return false;" href="#" class="button button-primary button-large">Singkronisasi User PPK dari LPSE</a>' )
+            		->set_help_text('User PPK di LPSE akan menjadi user PPK di wordpress.'),
+	        ) );
 	}
 
 	public function connLPSE($options = array()){
@@ -184,6 +196,37 @@ class Wp_Pbj_Admin {
 		if (!empty($_POST)) {
 			if (!empty($_POST['api_key']) && $_POST['api_key'] == get_option('_crb_pbj_api_key' )) {
 
+			}
+		}
+		die(json_encode($ret));
+	}
+
+	public function pbj_singkron_user_ppk(){
+		global $wpdb;
+		$ret = array(
+			'status'	=> 'success',
+			'message'	=> 'Berhasil singkronisasi user PPK!'
+		);
+		if (!empty($_POST)) {
+			if (!empty($_POST['api_key']) && $_POST['api_key'] == get_option('_crb_pbj_api_key' )) {
+				$sth = $this->lpse->prepare("
+					SELECT
+						p.ppk_id,
+						p.ppk_valid_start,
+						p.peg_id,
+						p.ppk_nomor_sk,
+						e.peg_nama,
+						e.peg_alamat,
+						e.peg_telepon,
+						e.peg_email,
+						e.peg_namauser
+					FROM public.ppk p
+						inner join public.pegawai e ON p.peg_id=e.peg_id
+					LIMIT 10
+				");
+				$sth->execute();
+				$ppk = $sth->fetchAll(PDO::FETCH_ASSOC);
+				print_r($ppk); die();
 			}
 		}
 		die(json_encode($ret));
