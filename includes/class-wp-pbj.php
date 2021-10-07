@@ -159,7 +159,10 @@ class Wp_Pbj {
 		$this->loader->add_action('carbon_fields_register_fields', $plugin_admin, 'crb_attach_sipd_options');
 
 		// ajax request
-		$this->loader->add_action('wp_ajax_pbj_singkron_user_ppk',  $plugin_admin, 'pbj_singkron_user_ppk');
+		$this->loader->add_action('wp_ajax_pbj_singkron_user',  $plugin_admin, 'pbj_singkron_user');
+
+		// shortcode
+		add_shortcode('singkronisasi_data_lpse', array($plugin_admin, 'singkronisasi_data_lpse'));
 
 	}
 

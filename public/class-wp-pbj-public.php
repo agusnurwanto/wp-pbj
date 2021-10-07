@@ -97,6 +97,9 @@ class Wp_Pbj_Public {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wp-pbj-public.js', array( 'jquery' ), $this->version, false );
+		wp_localize_script( $this->plugin_name, 'pbj', array(
+		    'ajaxurl' => admin_url('admin-ajax.php')
+		));
 
 	}
 

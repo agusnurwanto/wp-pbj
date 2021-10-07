@@ -120,6 +120,40 @@ class Wp_Pbj_Admin {
 	    return $randomString;
 	}
 
+	public function generatePage($nama_page, $tahun_anggaran = 2021, $content = false, $update = false){
+		$custom_post = get_page_by_title($nama_page, OBJECT, 'page');
+		if(empty($content)){
+			$content = '[monitor_pbj tahun_anggaran="'.$tahun_anggaran.'"]';
+		}
+
+		$_post = array(
+			'post_title'	=> $nama_page,
+			'post_content'	=> $content,
+			'post_type'		=> 'page',
+			'post_status'	=> 'private',
+			'comment_status'	=> 'closed'
+		);
+		if (empty($custom_post) || empty($custom_post->ID)) {
+			$id = wp_insert_post($_post);
+			$_post['insert'] = 1;
+			$_post['ID'] = $id;
+			$custom_post = get_page_by_title($nama_page, OBJECT, 'page');
+			update_post_meta($custom_post->ID, 'ast-breadcrumbs-content', 'disabled');
+			update_post_meta($custom_post->ID, 'ast-featured-img', 'disabled');
+			update_post_meta($custom_post->ID, 'ast-main-header-display', 'disabled');
+			update_post_meta($custom_post->ID, 'footer-sml-layout', 'disabled');
+			update_post_meta($custom_post->ID, 'site-content-layout', 'page-builder');
+			update_post_meta($custom_post->ID, 'site-post-title', 'disabled');
+			update_post_meta($custom_post->ID, 'site-sidebar-layout', 'no-sidebar');
+			update_post_meta($custom_post->ID, 'theme-transparent-header-meta', 'disabled');
+		}else if($update){
+			$_post['ID'] = $custom_post->ID;
+			wp_update_post( $_post );
+			$_post['update'] = 1;
+		}
+		return esc_url( get_permalink($custom_post));
+	}
+
 	public function crb_attach_sipd_options(){
 		if( !is_admin() ){
         	return;
@@ -128,6 +162,8 @@ class Wp_Pbj_Admin {
         if(!empty($this->lpse)){
         	$ket_lpse = '<span style="color: green; font-weight: bold;">Sukses terkoneksi</span>';
         }
+
+        $url_singkronisasi_lpse = $this->generatePage('Singkronisasi data LPSE', false, '[singkronisasi_data_lpse]');
 		$basic_options_container = Container::make( 'theme_options', __( 'PBJ Options' ) )
 			->set_page_menu_position( 4 )
 	        ->add_fields( array(
@@ -143,15 +179,10 @@ class Wp_Pbj_Admin {
 	            Field::make( 'text', 'crb_pbj_lpse_username', 'User Database' ),
 	            Field::make( 'text', 'crb_pbj_lpse_password', 'Password Database' ),
 	            Field::make( 'html', 'crb_pbj_status_lpse' )
-	            	->set_html( 'Status koneksi database LPSE: '.$ket_lpse )
+	            	->set_html( 'Status koneksi database LPSE: '.$ket_lpse ),
+	            Field::make( 'html', 'crb_pbj_singkron_lpse' )
+	            	->set_html( '<a target="_blank" href="'.$url_singkronisasi_lpse.'">Halaman singkronisasi data LPSE oleh admin PPE.</a>' )
             ) );
-        Container::make( 'theme_options', __( 'Singkronisasi LPSE' ) )
-		    ->set_page_parent( $basic_options_container )
-		    ->add_fields( array(
-		    	Field::make( 'html', 'crb_pbj_singkron_user_ppk' )
-            		->set_html( '<a id="pbj_singkron_user_ppk" onclick="return false;" href="#" class="button button-primary button-large">Singkronisasi User PPK dari LPSE</a>' )
-            		->set_help_text('User PPK di LPSE akan menjadi user PPK di wordpress.'),
-	        ) );
 	}
 
 	public function connLPSE($options = array()){
@@ -201,34 +232,129 @@ class Wp_Pbj_Admin {
 		die(json_encode($ret));
 	}
 
-	public function pbj_singkron_user_ppk(){
+	function gen_user_wp($user = array()){
+		global $wpdb;
+		if(!empty($user)){
+			$username = $user['loginname'];
+			$email = '';
+			if(empty($user['emailteks'])){
+				$email = $username.'@pbj.com';
+			}else{
+				$email = $user['emailteks'];
+			}
+			$role = get_role($user['role']);
+			if(empty($role)){
+				$kewenangan = array( 
+					'read' => true,
+					'edit_posts' => false,
+					'delete_posts' => false
+				);
+				if($user['role'] == 'pbj-ppe'){
+					$kewenangan['edit_posts'] = true;
+					$kewenangan['delete_posts'] = true;
+				}
+				add_role( $user['role'], $user['role'], $kewenangan );
+			}
+
+			$insert_user = username_exists($username);
+			if(!$insert_user){
+				$option = array(
+					'user_login' => $username,
+					'user_pass' => $user['pass'],
+					'user_email' => $email,
+					'first_name' => $user['nama'],
+					'display_name' => $user['nama'],
+					'role' => $user['role']
+				);
+				$insert_user = wp_insert_user($option);
+			}
+
+			foreach ($user['meta'] as $key => $value) {
+		      	update_user_meta( $insert_user, $key, $value ); 
+			}
+		}
+	}
+
+	public function pbj_singkron_user(){
 		global $wpdb;
 		$ret = array(
 			'status'	=> 'success',
-			'message'	=> 'Berhasil singkronisasi user PPK!'
+			'message'	=> 'Berhasil singkronisasi user!'
 		);
 		if (!empty($_POST)) {
 			if (!empty($_POST['api_key']) && $_POST['api_key'] == get_option('_crb_pbj_api_key' )) {
-				$sth = $this->lpse->prepare("
-					SELECT
-						p.ppk_id,
-						p.ppk_valid_start,
-						p.peg_id,
-						p.ppk_nomor_sk,
-						e.peg_nama,
-						e.peg_alamat,
-						e.peg_telepon,
-						e.peg_email,
-						e.peg_namauser
-					FROM public.ppk p
-						inner join public.pegawai e ON p.peg_id=e.peg_id
-					LIMIT 10
-				");
-				$sth->execute();
-				$ppk = $sth->fetchAll(PDO::FETCH_ASSOC);
-				print_r($ppk); die();
+				$type_aksi = $_POST['type_aksi'];
+				if($type_aksi == 'pbj_singkron_user_ppe'){
+					$sth = $this->lpse->prepare("
+						SELECT
+							e.*
+						FROM public.pegawai e
+							inner join public.usergroup g ON g.userid=e.peg_namauser
+						WHERE e.peg_isactive=-1
+							AND g.idgroup='ADM_PPE'
+					");
+					$role = 'pbj-ppe';
+				}else if($type_aksi == 'pbj_singkron_user_kupbj'){
+					$sth = $this->lpse->prepare("
+						SELECT
+							e.*
+						FROM public.pegawai e
+							inner join public.usergroup g ON g.userid=e.peg_namauser
+						WHERE e.peg_isactive=-1
+							AND g.idgroup='KUPPBJ'
+					");
+					$role = 'pbj-kupbj';
+				}else if($type_aksi == 'pbj_singkron_user_ppk'){
+					$sth = $this->lpse->prepare("
+						SELECT
+							p.ppk_id,
+							p.ppk_valid_start,
+							p.peg_id,
+							p.ppk_nomor_sk,
+							e.*
+						FROM public.ppk p
+							inner join public.pegawai e ON p.peg_id=e.peg_id
+							inner join public.usergroup g ON g.userid=e.peg_namauser
+						WHERE e.peg_isactive=-1
+							AND g.idgroup='PPK'
+					");
+					$role = 'pbj-ppk';
+				}else{
+					$ret['status'] = 'error';
+					$ret['message'] = $type_aksi.' tidak ditemukan!';
+				}
+				if($ret['status'] != 'error'){
+					$pass = $_POST['pass'];
+					$sth->execute();
+					$users = $sth->fetchAll(PDO::FETCH_ASSOC);
+					foreach ($users as $userdb) {
+						$user = array();
+						$user['pass'] = $pass;
+						$user['loginname'] = $userdb['peg_namauser'];
+						$user['emailteks'] = $userdb['peg_email'];
+						$user['role'] = $role;
+						$user['nama'] = $user['peg_nama'];
+						$user['meta'] = $userdb;
+						$this->gen_user_wp($user);
+					}
+					$ret['message'] = 'Berhasil singkronisasi '.count($users).' user '.$role.'!';
+				}
+			} else {
+				$ret['status'] = 'error';
+				$ret['message'] = 'APIKEY tidak sesuai!';
 			}
+		} else {
+			$ret['status'] = 'error';
+			$ret['message'] = 'Format Salah!';
 		}
 		die(json_encode($ret));
+	}
+
+	public function singkronisasi_data_lpse(){
+		// untuk disable render shortcode di halaman edit page/post
+		if(!empty($_GET) && !empty($_GET['post'])){
+			return '';
+		}
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wp-pbj-admin-display.php';
 	}
 }
