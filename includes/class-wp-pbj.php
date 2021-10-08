@@ -157,12 +157,14 @@ class Wp_Pbj {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action('carbon_fields_register_fields', $plugin_admin, 'crb_attach_sipd_options');
+		$this->loader->add_action('template_redirect', $plugin_admin, 'allow_access_private_post', 0);
 
 		// ajax request
 		$this->loader->add_action('wp_ajax_pbj_singkron_user',  $plugin_admin, 'pbj_singkron_user');
 
 		// shortcode
 		add_shortcode('singkronisasi_data_lpse', array($plugin_admin, 'singkronisasi_data_lpse'));
+		add_shortcode('pbj_detail_pegawai', array($plugin_admin, 'pbj_detail_pegawai'));
 
 	}
 

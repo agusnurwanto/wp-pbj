@@ -151,7 +151,7 @@ class Wp_Pbj_Admin {
 			wp_update_post( $_post );
 			$_post['update'] = 1;
 		}
-		return esc_url( get_permalink($custom_post));
+		return $this->get_link_post($custom_post);
 	}
 
 	public function crb_attach_sipd_options(){
@@ -256,21 +256,24 @@ class Wp_Pbj_Admin {
 				add_role( $user['role'], $user['role'], $kewenangan );
 			}
 
-			$insert_user = username_exists($username);
-			if(!$insert_user){
-				$option = array(
-					'user_login' => $username,
-					'user_pass' => $user['pass'],
-					'user_email' => $email,
-					'first_name' => $user['nama'],
-					'display_name' => $user['nama'],
-					'role' => $user['role']
-				);
-				$insert_user = wp_insert_user($option);
+			$user_id = username_exists($username);
+			$option_user = array(
+				'user_login' => $username,
+				'user_pass' => $user['pass'],
+				'user_email' => $email,
+				'first_name' => $user['nama'],
+				'display_name' => $user['nama'],
+				'role' => $user['role']
+			);
+			if(!$user_id){
+				$user_id = wp_insert_user($option_user);
+			}else{
+				$option_user['ID'] = $user_id;
+				wp_update_user($option_user);
 			}
 
 			foreach ($user['meta'] as $key => $value) {
-		      	update_user_meta( $insert_user, $key, $value ); 
+		      	update_user_meta( $user_id, $key, $value ); 
 			}
 		}
 	}
@@ -307,10 +310,7 @@ class Wp_Pbj_Admin {
 				}else if($type_aksi == 'pbj_singkron_user_ppk'){
 					$sth = $this->lpse->prepare("
 						SELECT
-							p.ppk_id,
-							p.ppk_valid_start,
-							p.peg_id,
-							p.ppk_nomor_sk,
+							p.*,
 							e.*
 						FROM public.ppk p
 							inner join public.pegawai e ON p.peg_id=e.peg_id
@@ -319,6 +319,28 @@ class Wp_Pbj_Admin {
 							AND g.idgroup='PPK'
 					");
 					$role = 'pbj-ppk';
+				}else if($type_aksi == 'pbj_singkron_user_pokja'){
+					$sth = $this->lpse->prepare("
+						SELECT
+							e.*
+						FROM public.pegawai e
+							inner join public.usergroup g ON g.userid=e.peg_namauser
+						WHERE e.peg_isactive=-1
+							AND g.idgroup='PANITIA'
+					");
+					// $sth_anggota_panitia = $this->lpse->prepare("
+					// 	SELECT
+					// 		p.*,
+					// 		a.*,
+					// 		e.*
+					// 	FROM public.anggota_panitia a
+					// 		inner join public.panitia p ON a.pnt_id=p.pnt_id
+					// 		inner join public.pegawai e ON a.peg_id=e.peg_id
+					// 		inner join public.usergroup g ON g.userid=e.peg_namauser
+					// 	WHERE e.peg_isactive=-1
+					// 		AND g.idgroup='PANITIA'
+					// ");
+					$role = 'pbj-pokja';
 				}else{
 					$ret['status'] = 'error';
 					$ret['message'] = $type_aksi.' tidak ditemukan!';
@@ -327,7 +349,9 @@ class Wp_Pbj_Admin {
 					$pass = $_POST['pass'];
 					$sth->execute();
 					$users = $sth->fetchAll(PDO::FETCH_ASSOC);
+					$jml = 0;
 					foreach ($users as $userdb) {
+						$jml++;
 						$user = array();
 						$user['pass'] = $pass;
 						$user['loginname'] = $userdb['peg_namauser'];
@@ -337,7 +361,7 @@ class Wp_Pbj_Admin {
 						$user['meta'] = $userdb;
 						$this->gen_user_wp($user);
 					}
-					$ret['message'] = 'Berhasil singkronisasi '.count($users).' user '.$role.'!';
+					$ret['message'] = 'Berhasil singkronisasi '.$jml.' user '.$role.'!';
 				}
 			} else {
 				$ret['status'] = 'error';
@@ -357,4 +381,129 @@ class Wp_Pbj_Admin {
 		}
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wp-pbj-admin-display.php';
 	}
+
+	function gen_key($key_db = false, $options = array()){
+		$now = time()*1000;
+		if(empty($key_db)){
+			$key_db = md5(get_option( '_crb_pbj_api_key' ));
+		}
+		$tambahan_url = '';
+		if(!empty($options['custom_url'])){
+			$custom_url = array();
+			foreach ($options['custom_url'] as $k => $v) {
+				$custom_url[] = $v['key'].'='.$v['value'];
+			}
+			$tambahan_url = $key_db.implode('&', $custom_url);
+		}
+		$key = base64_encode($now.$key_db.$now.$tambahan_url);
+		return $key;
+	}
+
+	public function get_link_post($custom_post){
+		$link = get_permalink($custom_post);
+		$options = array();
+		if(!empty($custom_post->custom_url)){
+			$options['custom_url'] = $custom_post->custom_url;
+		}
+		if(strpos($link, '?') === false){
+			$link .= '?key=' . $this->gen_key(false, $options);
+		}else{
+			$link .= '&key=' . $this->gen_key(false, $options);
+		}
+		return $link;
+	}
+
+    public function allow_access_private_post(){
+    	if(
+    		!empty($_GET) 
+    		&& !empty($_GET['key'])
+    	){
+    		$key = base64_decode($_GET['key']);
+    		$key_db = md5(get_option( '_crb_pbj_api_key' ));
+    		$key = explode($key_db, $key);
+    		$valid = 0;
+    		if(
+    			!empty($key[1]) 
+    			&& $key[0] == $key[1]
+    			&& is_numeric($key[1])
+    		){
+    			$tgl1 = new DateTime();
+    			$date = substr($key[1], 0, strlen($key[1])-3);
+    			$tgl2 = new DateTime(date('Y-m-d', $date));
+    			$valid = $tgl2->diff($tgl1)->days+1;
+    		}
+    		if($valid == 1){
+	    		global $wp_query;
+		        // print_r($wp_query);
+		        // print_r($wp_query->queried_object); die('tes');
+		        if(!empty($wp_query->queried_object)){
+		    		if($wp_query->queried_object->post_status == 'private'){
+						wp_update_post(array(
+					        'ID'    =>  $wp_query->queried_object->ID,
+					        'post_status'   =>  'publish'
+				        ));
+				        die('<script>window.location =  window.location.href;</script>');
+					}else{
+						wp_update_post(array(
+					        'ID'    =>  $wp_query->queried_object->ID,
+					        'post_status'   =>  'private'
+				        ));
+					}
+				}else if($wp_query->found_posts >= 1){
+					global $wpdb;
+					$sql = $wp_query->request;
+					$post = $wpdb->get_results($sql, ARRAY_A);
+					if(!empty($post)){
+						if($post[0]['post_status'] == 'private'){
+							wp_update_post(array(
+						        'ID'    =>  $post[0]['ID'],
+						        'post_status'   =>  'publish'
+					        ));
+					        die('<script>window.location =  window.location.href;</script>');
+						}else{
+							wp_update_post(array(
+						        'ID'    =>  $post[0]['ID'],
+						        'post_status'   =>  'private'
+					        ));
+						}
+					}
+				}
+			}
+    	}
+    }
+
+    public function pbj_detail_pegawai(){
+		global $wpdb;
+		$user_id = um_user( 'ID' );
+		$user = get_userdata($user_id);
+		if(empty($user->roles)){
+			echo 'User ini tidak dapat akses sama sekali :)';
+		}else if(
+			in_array("pbj-ppe", $user->roles)
+			|| in_array("pbj-kupbj", $user->roles)
+			|| in_array("pbj-ppk", $user->roles)
+			|| in_array("pbj-pokja", $user->roles)
+		){
+			$sth = $this->lpse->prepare("
+				SELECT
+					e.*
+				FROM public.pegawai e
+				WHERE e.peg_namauser='".$user->data->user_login."'
+			");
+			$sth->execute();
+			$users = $sth->fetchAll(PDO::FETCH_ASSOC);
+			foreach ($users as $userdb) {
+				$detail = array();
+				foreach ($userdb as $key => $value) {
+					if($key == 'passw'){
+						continue;
+					}
+					$detail[] = $key.'= '.$value;
+				}
+				echo implode('<br>', $detail);
+			}
+		}else{
+			echo 'User ini tidak dapat akses halaman ini :)';
+		}
+    }
 }
