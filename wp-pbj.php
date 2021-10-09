@@ -30,6 +30,8 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+define( 'PBJ_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
 // ============== https://carbonfields.net/ ================
 define( 'Carbon_Fields_Plugin\PLUGIN_FILE', __FILE__ );
 

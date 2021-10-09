@@ -164,6 +164,7 @@ class Wp_Pbj_Admin {
         }
 
         $url_singkronisasi_lpse = $this->generatePage('Singkronisasi data LPSE', false, '[singkronisasi_data_lpse]');
+        $url_dashboard_lpse = $this->generatePage('Dashboard LPSE', false, '[dashboard_lpse]');
 		$basic_options_container = Container::make( 'theme_options', __( 'PBJ Options' ) )
 			->set_page_menu_position( 4 )
 	        ->add_fields( array(
@@ -380,6 +381,13 @@ class Wp_Pbj_Admin {
 			return '';
 		}
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wp-pbj-admin-display.php';
+	}
+
+	public function dashboard_lpse(){
+		if(!empty($_GET) && !empty($_GET['post'])){
+			return '';
+		}
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wp-pbj-dashboard-lpse.php';
 	}
 
 	function gen_key($key_db = false, $options = array()){

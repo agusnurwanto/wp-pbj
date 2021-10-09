@@ -165,6 +165,7 @@ class Wp_Pbj {
 		// shortcode
 		add_shortcode('singkronisasi_data_lpse', array($plugin_admin, 'singkronisasi_data_lpse'));
 		add_shortcode('pbj_detail_pegawai', array($plugin_admin, 'pbj_detail_pegawai'));
+		add_shortcode('dashboard_lpse', array($plugin_admin, 'dashboard_lpse'));
 
 	}
 
