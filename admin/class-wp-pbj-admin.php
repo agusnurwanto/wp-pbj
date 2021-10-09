@@ -251,8 +251,16 @@ class Wp_Pbj_Admin {
 					'delete_posts' => false
 				);
 				if($user['role'] == 'pbj-ppe'){
-					$kewenangan['edit_posts'] = true;
-					$kewenangan['delete_posts'] = true;
+					$kewenangan = get_role( 'editor' )->capabilities;
+					$kewenangan['edit_private_pages'] = false;
+					$kewenangan['edit_private_post'] = false;
+					$kewenangan['delete_private_posts'] = false;
+					$kewenangan['delete_private_pages'] = false;
+					$kewenangan['read_private_posts'] = false;
+					$kewenangan['read_private_pages'] = false;
+					$kewenangan['edit_theme_options'] = true;
+					$kewenangan['list_users'] = true;
+					$kewenangan['edit_users'] = true;
 				}
 				add_role( $user['role'], $user['role'], $kewenangan );
 			}
