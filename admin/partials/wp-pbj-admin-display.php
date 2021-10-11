@@ -3,6 +3,7 @@ $url_user_ppe = $this->generatePage('User PPE', false, '<div style="height:30px"
 $url_user_kupbj = $this->generatePage('User KUPBJ', false, '<div style="height:30px" aria-hidden="true" class="wp-block-spacer"></div><h2 class="has-text-align-center">Daftar User KUPBJ (Kepala Unit Pengadaan Barang dan Jasa)</h2>[ultimatemember form_id="10"]');
 $url_user_ppk = $this->generatePage('User PPK', false, '<div style="height:30px" aria-hidden="true" class="wp-block-spacer"></div><h2 class="has-text-align-center">Daftar User PPK (Pejabat Pembuat komitment)</h2>[ultimatemember form_id="10"]');
 $url_user_pokja = $this->generatePage('User POKJA', false, '<div style="height:30px" aria-hidden="true" class="wp-block-spacer"></div><h2 class="has-text-align-center">Daftar User POKJA (Kelompok Kerja)</h2>[ultimatemember form_id="10"]');
+$url_panitia_pokja = $this->generatePage('Daftar Panitia POKJA', false, '[daftar_panitia_pokja]');
 ?>
 <style>
 
@@ -49,6 +50,13 @@ $url_user_pokja = $this->generatePage('User POKJA', false, '<div style="height:3
 				<td class="text_tengah">
 					<a id="pbj_singkron_user_pokja" onclick="return false;" href="#" class="pbj_singkron_user button button-primary button-large">Singkronisasi</a>
 					<a target="_blank" href="<?php echo $url_user_pokja; ?>" class="button button-large">Lihat</a>
+				</td>
+			</tr>
+			<tr>
+				<td class="text_tengah">5</td>
+				<td>Daftar panitia POKJA dan anggotanya</td>
+				<td class="text_tengah">
+					<a target="_blank" href="<?php echo $url_panitia_pokja; ?>" class="button button-large">Lihat</a>
 				</td>
 			</tr>
 		</tbody>

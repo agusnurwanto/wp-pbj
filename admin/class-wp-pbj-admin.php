@@ -383,8 +383,14 @@ class Wp_Pbj_Admin {
 		die(json_encode($ret));
 	}
 
+	public function daftar_panitia_pokja(){
+		if(!empty($_GET) && !empty($_GET['post'])){
+			return '';
+		}
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wp-pbj-daftar-panita-pokja.php';
+	}
+
 	public function singkronisasi_data_lpse(){
-		// untuk disable render shortcode di halaman edit page/post
 		if(!empty($_GET) && !empty($_GET['post'])){
 			return '';
 		}
