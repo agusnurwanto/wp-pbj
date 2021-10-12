@@ -337,18 +337,6 @@ class Wp_Pbj_Admin {
 						WHERE e.peg_isactive=-1
 							AND g.idgroup='PANITIA'
 					");
-					// $sth_anggota_panitia = $this->lpse->prepare("
-					// 	SELECT
-					// 		p.*,
-					// 		a.*,
-					// 		e.*
-					// 	FROM public.anggota_panitia a
-					// 		inner join public.panitia p ON a.pnt_id=p.pnt_id
-					// 		inner join public.pegawai e ON a.peg_id=e.peg_id
-					// 		inner join public.usergroup g ON g.userid=e.peg_namauser
-					// 	WHERE e.peg_isactive=-1
-					// 		AND g.idgroup='PANITIA'
-					// ");
 					$role = 'pbj-pokja';
 				}else{
 					$ret['status'] = 'error';
@@ -500,9 +488,15 @@ class Wp_Pbj_Admin {
 		$user = get_userdata($user_id);
 		if(empty($user->roles)){
 			echo 'User ini tidak dapat akses sama sekali :)';
+		}else if(in_array("pbj-ppe", $user->roles)){
+			$custom_post = get_page_by_title('Singkronisasi data LPSE', OBJECT, 'page');
+			$url = $this->get_link_post($custom_post);
+			echo '
+			<div style="text-align: center">
+				<a class="button button-primary" href="'.$url.'" target="_blank">Sinkronisasi Data LPSE</a>
+			</div>';
 		}else if(
-			in_array("pbj-ppe", $user->roles)
-			|| in_array("pbj-kupbj", $user->roles)
+			in_array("pbj-kupbj", $user->roles)
 			|| in_array("pbj-ppk", $user->roles)
 			|| in_array("pbj-pokja", $user->roles)
 		){
@@ -527,5 +521,33 @@ class Wp_Pbj_Admin {
 		}else{
 			echo 'User ini tidak dapat akses halaman ini :)';
 		}
+    }
+
+    public function get_paket_pokja(){
+    	global $wpdb;
+		$ret = array(
+			'status'	=> 'success',
+			'message'	=> 'Berhasil get paket POKJA!'
+		);
+		if (!empty($_POST)) {
+			if (!empty($_POST['api_key']) && $_POST['api_key'] == get_option('_crb_pbj_api_key' )) {
+				$sth = $this->lpse->prepare("
+					SELECT
+						p.*
+					FROM public.paket p
+					WHERE p.pnt_id=:pnt_id
+				");
+				$sth->execute(array(':pnt_id' => $_POST['pnt_id']));
+				$all_paket = $sth->fetchAll(PDO::FETCH_ASSOC);
+				$ret['data'] = $all_paket;
+			} else {
+				$ret['status'] = 'error';
+				$ret['message'] = 'APIKEY tidak sesuai!';
+			}
+		} else {
+			$ret['status'] = 'error';
+			$ret['message'] = 'Format Salah!';
+		}
+		die(json_encode($ret));
     }
 }

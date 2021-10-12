@@ -161,6 +161,7 @@ class Wp_Pbj {
 
 		// ajax request
 		$this->loader->add_action('wp_ajax_pbj_singkron_user',  $plugin_admin, 'pbj_singkron_user');
+		$this->loader->add_action('wp_ajax_get_paket_pokja',  $plugin_admin, 'get_paket_pokja');
 
 		// shortcode
 		add_shortcode('singkronisasi_data_lpse', array($plugin_admin, 'singkronisasi_data_lpse'));

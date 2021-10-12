@@ -26,6 +26,7 @@ foreach ($users as $k => $user) {
 				'nama' => $user_lpse['pnt_nama'],
 				'tahun' => $user_lpse['pnt_tahun'],
 				'no_sk' => $user_lpse['pnt_no_sk'],
+				'pnt_id' => $user_lpse['pnt_id'],
 				'data' => array()
 			);
 		}
@@ -47,7 +48,7 @@ foreach($data_panita as $panitia){
 					<tbody>
 						<tr>
 							<td>Nama</td>
-							<td>'.$panitia['nama'].'</td>
+							<td class="pnt_nama">'.$panitia['nama'].'</td>
 						</tr>
 						<tr>
 							<td>Tahun</td>
@@ -56,6 +57,11 @@ foreach($data_panita as $panitia){
 						<tr>
 							<td>Nomor SK</td>
 							<td>'.$panitia['no_sk'].'</td>
+						</tr>
+						<tr>
+							<td colspan="2" class="text_tengah">
+								<a data-pnt-id="'.$panitia['pnt_id'].'" class="daftar-paket button button-primary" onclick="return false;" href="#">Daftar Paket</a>
+							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -108,7 +114,8 @@ foreach($data_panita as $panitia){
 	}
 </style>
 <div class="wrap-pbj">
-	<h1 class="text_tengah">Data Panitia POKJA dan Anggota</h1>
+	<input type="hidden" value="<?php echo get_option( '_crb_pbj_api_key' ); ?>" id="api_key">
+	<h1 class="text_tengah">Daftar Panitia POKJA dan Anggota</h1>
 	<table class="td-top table table-bordered">
 		<thead>
 			<tr>
@@ -122,3 +129,78 @@ foreach($data_panita as $panitia){
 		</tbody>
 	</table>
 </div>
+<div class="modal fade" id="mod-paket" tabindex="-1" role="dialog" data-backdrop="static" aria-hidden="true">'
+    <div class="modal-dialog" style="min-width: 95%;" role="document">
+        <div class="modal-content">
+            <div class="modal-header bgpanel-theme">
+                <h4 style="margin: 0;" class="modal-title" id="">Daftar Paket Pekerjaan "<span style="font-weight: bold;"></span>"</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span><i class="dashicons dashicons-dismiss"></i></span></button>
+            </div>
+            <div class="modal-body">
+            	<table id="mod-daftar-paket" class="table table-bordered">
+            		<thead>
+            			<tr>
+            				<th class="text_tengah" style="width: 30px;">No</th>
+            				<th class="text_tengah">Nama Paket</th>
+            				<th class="text_tengah">Pagu</th>
+            				<th class="text_tengah">HPS</th>
+            				<th class="text_tengah">Tgl Buat</th>
+            				<th class="text_tengah">Tgl Assign</th>
+            				<th class="text_tengah">Tgl Assign Pokja</th>
+            				<th class="text_tengah">Tgl Assign UKPBJ</th>
+            			</tr>
+            		</thead>
+            		<tbody></tbody>
+            	</table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+	jQuery('.daftar-paket').on('click', function(){
+		jQuery('#wrap-loading').show();
+		var pnt_id = jQuery(this).attr('data-pnt-id');
+		var pnt_nama = jQuery(this).closest('table').find('.pnt_nama').text();
+		jQuery.ajax({
+			url: pbj.ajaxurl,
+          	type: "post",
+          	data: {
+          		"action": "get_paket_pokja",
+          		"api_key": jQuery('#api_key').val(),
+          		"pnt_id": pnt_id
+          	},
+          	dataType: "json",
+          	success: function(data){
+				var body = '';
+				if(data.status == 'error'){
+					alert(data.message);
+				}else{
+					data.data.map(function(b, i){
+						body += ''
+							+'<tr>'
+								+'<td class="text_tengah">'+(i+1)+'</td>'
+								+'<td>'+b.pkt_nama+'</td>'
+								+'<td class="text_kanan">'+b.pkt_pagu+'</td>'
+								+'<td class="text_kanan">'+b.pkt_hps+'</td>'
+								+'<td class="text_tengah">'+b.pkt_tgl_buat+'</td>'
+								+'<td class="text_tengah">'+b.pkt_tgl_assign+'</td>'
+								+'<td class="text_tengah">'+b.pkt_tgl_assign_pokja+'</td>'
+								+'<td class="text_tengah">'+b.pkt_tgl_assign_ukpbj+'</td>'
+							+'</tr>';
+					});
+					jQuery('#mod-daftar-paket tbody').html(body);
+					jQuery('#mod-paket .modal-title span').text(pnt_nama);
+					jQuery('#mod-paket').modal('show');
+				}
+				jQuery('#wrap-loading').hide();
+			},
+			error: function(e) {
+				console.log(e);
+				return alert(data.message);
+			}
+		});
+	});
+</script>
