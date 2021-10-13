@@ -371,6 +371,13 @@ class Wp_Pbj_Admin {
 		die(json_encode($ret));
 	}
 
+	public function pengajuan_paket(){
+		if(!empty($_GET) && !empty($_GET['post'])){
+			return '';
+		}
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/wp-pbj-pengajuan-paket.php';
+	}
+
 	public function daftar_panitia_pokja(){
 		if(!empty($_GET) && !empty($_GET['post'])){
 			return '';
@@ -540,6 +547,53 @@ class Wp_Pbj_Admin {
 				$sth->execute(array(':pnt_id' => $_POST['pnt_id']));
 				$all_paket = $sth->fetchAll(PDO::FETCH_ASSOC);
 				$ret['data'] = $all_paket;
+			} else {
+				$ret['status'] = 'error';
+				$ret['message'] = 'APIKEY tidak sesuai!';
+			}
+		} else {
+			$ret['status'] = 'error';
+			$ret['message'] = 'Format Salah!';
+		}
+		die(json_encode($ret));
+    }
+
+    public function get_detail_sirup_rup(){
+    	global $wpdb;
+		$ret = array(
+			'status'	=> 'success',
+			'message'	=> 'Berhasil get paket POKJA!'
+		);
+		if (!empty($_POST)) {
+			if (!empty($_POST['api_key']) && $_POST['api_key'] == get_option('_crb_pbj_api_key' )) {
+				$id_rup = $_POST['id_rup'];
+				$url = 'https://sirup.lkpp.go.id/sirup/ro/pp/2018/'.$id_rup;
+				$curl = curl_init();
+				curl_setopt_array($curl, array(
+		            CURLOPT_URL => $url,
+		            CURLOPT_RETURNTRANSFER => true,
+		            CURLOPT_ENCODING => "",
+		            CURLOPT_MAXREDIRS => 10,
+		            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+		            CURLOPT_SSL_VERIFYPEER => false,
+		            CURLOPT_SSL_VERIFYHOST => false,
+		            CURLOPT_NOSIGNAL => 1,
+		            CURLOPT_CONNECTTIMEOUT => -1,
+		            CURLOPT_TIMEOUT => -1
+		        ));
+		        $response = curl_exec($curl);
+		        // die($response);
+		        $err = curl_error($curl);
+
+		        curl_close($curl);
+		        if ($err) {
+		        	$this->status_koneksi_simda = false;
+		        	$msg = "cURL Error #:".$err." (".$url.")";
+					$ret['status'] = 'error';
+					$ret['message'] = $msg;
+		        } else {
+		        	$ret['data'] = $response;
+		        }
 			} else {
 				$ret['status'] = 'error';
 				$ret['message'] = 'APIKEY tidak sesuai!';

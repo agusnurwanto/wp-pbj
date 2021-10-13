@@ -1,6 +1,7 @@
 <?php
 $url_panitia_pokja = $this->generatePage('Daftar Panitia POKJA', false, '[daftar_panitia_pokja]');
 $url_dashboard_lpse = $this->generatePage('Dashboard LPSE', false, '[dashboard_lpse]');
+$url_pengajuan_paket = $this->generatePage('Pengajuan Paket', false, '[pengajuan_paket]');
 ?>
 <style>
 
@@ -61,6 +62,13 @@ $url_dashboard_lpse = $this->generatePage('Dashboard LPSE', false, '[dashboard_l
 				<td>Dashboard LPSE</td>
 				<td class="text_tengah">
 					<a target="_blank" href="<?php echo $url_dashboard_lpse; ?>" class="button button-large">Lihat</a>
+				</td>
+			</tr>
+			<tr>
+				<td class="text_tengah">7</td>
+				<td>Pengajuan Paket</td>
+				<td class="text_tengah">
+					<a target="_blank" href="<?php echo $url_pengajuan_paket; ?>" class="button button-large">Lihat</a>
 				</td>
 			</tr>
 		</tbody>

@@ -84,3 +84,6 @@
 .entry-content h3.card-title, h3.card-title {
     margin-bottom: .75rem;
 }
+input.form-control {
+    padding: .375rem .75rem;
+}
