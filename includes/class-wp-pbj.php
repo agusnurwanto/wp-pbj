@@ -157,6 +157,19 @@ class Wp_Pbj {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action('carbon_fields_register_fields', $plugin_admin, 'crb_attach_sipd_options');
+		$this->loader->add_action('template_redirect', $plugin_admin, 'allow_access_private_post', 0);
+
+		// ajax request
+		$this->loader->add_action('wp_ajax_pbj_singkron_user',  $plugin_admin, 'pbj_singkron_user');
+		$this->loader->add_action('wp_ajax_get_paket_pokja',  $plugin_admin, 'get_paket_pokja');
+		$this->loader->add_action('wp_ajax_get_detail_sirup_rup',  $plugin_admin, 'get_detail_sirup_rup');
+
+		// shortcode
+		add_shortcode('singkronisasi_data_lpse', array($plugin_admin, 'singkronisasi_data_lpse'));
+		add_shortcode('pbj_detail_pegawai', array($plugin_admin, 'pbj_detail_pegawai'));
+		add_shortcode('dashboard_lpse', array($plugin_admin, 'dashboard_lpse'));
+		add_shortcode('daftar_panitia_pokja', array($plugin_admin, 'daftar_panitia_pokja'));
+		add_shortcode('pengajuan_paket', array($plugin_admin, 'pengajuan_paket'));
 
 	}
 
