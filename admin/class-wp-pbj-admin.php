@@ -57,7 +57,7 @@ class Wp_Pbj_Admin {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-		$this->lpse = $this->connLPSE(array('cek' => true));
+		$this->lpse = $this->connLPSE(array('cek' => true, 'debug' => 0));
 
 	}
 
