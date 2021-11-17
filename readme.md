@@ -3,7 +3,7 @@
 Aplikasi untuk optimasi kinerja Pengadaan Barang dan Jasa pemerintah daerah
 Semoga bermanfaat
 
-Cara pakai plugin:
+### Cara pakai plugin:
 - Install wordpress
 - Install plugin ini dan aktifkan
 - Import SQL file tabel.sql untuk membuat tabel database yang diperlukan oleh plugin
@@ -14,7 +14,10 @@ Cara pakai plugin:
 - Buka halaman **Ultimate Member > Settings > Extensions** untuk mendaftarkan api_key recaptcha
 - Untuk mendapatkan api key recaptcha bisa didapat dari http://www.google.com/recaptcha/admin
 
-Permintaan fitur:
+### Catatan
+- Untuk debug koneksi database. Rubah mode debug menjadi 1 pada file **admin/class-wp-pbj-admin.php line: 60**
+
+### Permintaan fitur:
 - User umum bisa request penambahan fitur dengan membuat issue
 
 ### Video Tutorial 
